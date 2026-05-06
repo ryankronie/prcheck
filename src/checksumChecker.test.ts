@@ -32,6 +32,12 @@ describe("computeHash", () => {
   it("trims whitespace before hashing", () => {
     expect(computeHash("  hello  ")).toBe(computeHash("hello"));
   });
+
+  it("returns consistent hash for empty string", () => {
+    const hash = computeHash("");
+    expect(hash).toHaveLength(64);
+    expect(hash).toMatch(/^[a-f0-9]+$/);
+  });
 });
 
 describe("extractChecksumSections", () => {
@@ -51,6 +57,11 @@ describe("extractChecksumSections", () => {
     for (const s of sections) {
       expect(s.hash).toHaveLength(64);
     }
+  });
+
+  it("returns empty array for empty string", () => {
+    const sections = extractChecksumSections("");
+    expect(sections).toHaveLength(0);
   });
 });
 
@@ -88,5 +99,14 @@ describe("validateChecksums", () => {
     const summaryHash = sections.find((s) => s.heading === "Summary")!.hash;
     const result = validateChecksums(sampleBody, { summary: summaryHash });
     expect(result.valid).toBe(true);
+  });
+
+  it("accumulates multiple errors when several sections are missing", () => {
+    const result = validateChecksums(sampleBody, {
+      "Missing One": "abc123",
+      "Missing Two": "def456",
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(2);
   });
 });
